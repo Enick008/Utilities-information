@@ -235,7 +235,8 @@
                 document.getElementById(tabName).classList.remove("hidden");
                 evt.currentTarget.classList.add("active");
 
-                if (tabName === "stats" && this.allData.length > 0) {
+                if (tabName === "stats") {
+                    // Always try to render chart when tab is opened
                     this.filterAndRenderChart();
                 }
             },
@@ -260,20 +261,24 @@
                     return;
                 }
 
-                this.showStatus("⏳ กำลังบันทึกข้อมูล...", "loading");
-                
-                // This part interacts with Google Apps Script backend
-                google.script.run
-                    .withSuccessHandler(msg => {
-                        this.showStatus(`✅ ${msg}`, "success");
-                        document.getElementById("utilityForm").reset();
-                        this.populateDateSelectors(); // Reset date selectors to default
-                        this.loadChartData(); // Refresh chart data after submission
-                    })
-                    .withFailureHandler(err => {
-                        this.showStatus(`❌ เกิดข้อผิดพลาด: ${err.message}`, "error");
-                    })
-                    .saveData(data);
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    this.showStatus("⏳ กำลังบันทึกข้อมูล...", "loading");
+                    
+                    google.script.run
+                        .withSuccessHandler(msg => {
+                            this.showStatus(`✅ ${msg}`, "success");
+                            document.getElementById("utilityForm").reset();
+                            this.populateDateSelectors();
+                            this.loadChartData(); // Refresh chart data after submission
+                        })
+                        .withFailureHandler(err => {
+                            this.showStatus(`❌ เกิดข้อผิดพลาด: ${err.message}`, "error");
+                        })
+                        .saveData(data);
+                } else {
+                    this.showStatus("❌ ไม่สามารถบันทึกได้ (ทดสอบนอกสภาพแวดล้อม Google)", "error");
+                    console.warn("google.script.run is not available.");
+                }
             },
 
             // Displays status messages
@@ -290,7 +295,6 @@
                 }
             },
 
-            // Shows a message on the chart area (e.g., for loading or errors)
             showChartMessage(message) {
                 const msgDiv = document.getElementById("chart-message");
                 const chartCanvas = document.getElementById("utilityChart");
@@ -308,34 +312,50 @@
 
             // Loads data for the chart from Google Apps Script
             loadChartData() {
-                this.showChartMessage("กำลังโหลดข้อมูลสถิติ...");
-                google.script.run
-                    .withSuccessHandler(data => {
-                        this.allData = data;
-                        this.setDefaultDateRange();
-                        this.filterAndRenderChart();
-                    })
-                    .withFailureHandler(err => {
-                        this.showChartMessage(`ไม่สามารถโหลดข้อมูลได้: ${err.message}`);
-                    })
-                    .getSheetData();
+                console.log("1. Starting loadChartData..."); // DEBUG
+                if (typeof google !== 'undefined' && google.script && google.script.run) {
+                    this.showChartMessage("กำลังโหลดข้อมูลสถิติ...");
+                    google.script.run
+                        .withSuccessHandler(data => {
+                            console.log("2. Data received from Google Sheet:", data); // DEBUG
+                            if (data && Array.isArray(data)) {
+                                this.allData = data;
+                                this.setDefaultDateRange();
+                                this.filterAndRenderChart();
+                            } else {
+                                console.error("Data received is not a valid array:", data);
+                                this.showChartMessage("รูปแบบข้อมูลที่ได้รับไม่ถูกต้อง");
+                            }
+                        })
+                        .withFailureHandler(err => {
+                            console.error("3. Failed to load data from Google Sheet:", err); // DEBUG
+                            this.showChartMessage(`ไม่สามารถโหลดข้อมูลได้: ${err.message}`);
+                        })
+                        .getSheetData();
+                } else {
+                    this.showChartMessage("ไม่สามารถโหลดข้อมูลได้ (ทดสอบนอกสภาพแวดล้อม Google)");
+                    console.warn("google.script.run is not available.");
+                }
             },
             
-            // Sets the default date range for the chart to the last 12 months
             setDefaultDateRange() {
                 const now = new Date();
                 const endDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                const startDate = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+                // Correctly calculate 11 months before the current month
+                const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
                 document.getElementById("endMonth").value = this.THAI_MONTHS_FULL[endDate.getMonth()];
                 document.getElementById("endYear").value = endDate.getFullYear() + 543;
                 document.getElementById("startMonth").value = this.THAI_MONTHS_FULL[startDate.getMonth()];
                 document.getElementById("startYear").value = startDate.getFullYear() + 543;
+                console.log(`4. Default date range set: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`); // DEBUG
             },
 
             // Filters data based on selected date range and triggers chart rendering
             filterAndRenderChart() {
-                if (this.allData.length === 0) {
+                console.log("5. Starting filterAndRenderChart..."); // DEBUG
+                if (!this.allData || this.allData.length === 0) {
+                    console.log("No data available to filter."); // DEBUG
                     this.showChartMessage("ยังไม่มีข้อมูลในระบบ");
                     return;
                 }
@@ -345,36 +365,42 @@
                 const endMonth = document.getElementById("endMonth").value;
                 const endYear = parseInt(document.getElementById("endYear").value, 10);
 
-                const fromDate = new Date(startYear - 543, this.THAI_MONTHS_FULL.indexOf(startMonth));
-                // Set to the end of the month to include all days in that month
+                const fromDate = new Date(startYear - 543, this.THAI_MONTHS_FULL.indexOf(startMonth), 1);
                 const toDate = new Date(endYear - 543, this.THAI_MONTHS_FULL.indexOf(endMonth) + 1, 0);
+                
+                console.log(`6. Filtering data from ${fromDate.toISOString()} to ${toDate.toISOString()}`); // DEBUG
 
                 const filteredData = this.allData.filter(row => {
-                    // Assuming row format: [Timestamp, Month, Year, Building, Water, Elec, ...]
                     const recordMonthIndex = this.THAI_MONTHS_FULL.indexOf(row[1]);
                     const recordYear = parseInt(row[2], 10) - 543;
-                    if (recordMonthIndex === -1 || isNaN(recordYear)) return false;
+                    if (recordMonthIndex === -1 || isNaN(recordYear)) {
+                        return false;
+                    }
                     
-                    const recordDate = new Date(recordYear, recordMonthIndex);
+                    const recordDate = new Date(recordYear, recordMonthIndex, 1);
                     return recordDate >= fromDate && recordDate <= toDate;
                 });
-
+                
+                console.log("7. Filtered data result:", filteredData); // DEBUG
                 this.renderChart(filteredData);
             },
 
             // Renders the chart with the provided data
             renderChart(data) {
+                console.log("8. Starting renderChart with data:", data); // DEBUG
                 if (!data || data.length === 0) {
                     this.showChartMessage("ไม่พบข้อมูลตามช่วงเวลาที่เลือก");
-                    if (this.utilityChart) this.utilityChart.destroy();
+                    if (this.utilityChart) {
+                        this.utilityChart.destroy();
+                        this.utilityChart = null;
+                    }
                     return;
                 }
                 
                 this.hideChartMessage();
 
-                // Group data by month/year
                 const grouped = data.reduce((acc, row) => {
-                    const key = `${row[1]} ${row[2]}`; // e.g., "มกราคม 2567"
+                    const key = `${row[1]} ${row[2]}`;
                     if (!acc[key]) {
                         acc[key] = { water: 0, electricity: 0, phone: 0, internet: 0, fuel: 0, date: new Date(parseInt(row[2])-543, this.THAI_MONTHS_FULL.indexOf(row[1])) };
                     }
@@ -385,9 +411,11 @@
                     acc[key].fuel += Number(row[8] || 0);
                     return acc;
                 }, {});
+                
+                console.log("9. Grouped data for chart:", grouped); // DEBUG
 
-                // Sort the grouped data by date chronologically
                 const sortedLabels = Object.keys(grouped).sort((a, b) => grouped[a].date - grouped[b].date);
+                console.log("10. Sorted labels for chart:", sortedLabels); // DEBUG
 
                 const datasets = [
                     { label: "ค่าน้ำ", data: sortedLabels.map(l => grouped[l].water), backgroundColor: 'rgba(54, 162, 235, 0.5)', borderColor: 'rgb(54, 162, 235)' },
@@ -447,57 +475,11 @@
                         }
                     }
                 });
+                console.log("11. Chart rendered successfully."); // DEBUG
             }
         };
 
-        // Run the application once the DOM is fully loaded
         document.addEventListener("DOMContentLoaded", () => {
-            // Mocking google.script.run for local testing without a Google Apps Script backend.
-            // You can comment out or remove this block when deploying.
-            if (typeof google === 'undefined') {
-                window.google = {
-                    script: {
-                        run: {
-                            withSuccessHandler: function(callback) {
-                                this.onSuccess = callback;
-                                return this;
-                            },
-                            withFailureHandler: function(callback) {
-                                this.onFailure = callback;
-                                return this;
-                            },
-                            saveData: function(data) {
-                                console.log("Mock Save:", data);
-                                if (this.onSuccess) {
-                                    setTimeout(() => this.onSuccess("บันทึกข้อมูล (จำลอง) สำเร็จ"), 1000);
-                                }
-                            },
-                            getSheetData: function() {
-                                console.log("Mock Load Data");
-                                if (this.onSuccess) {
-                                    // Generating some mock data for demonstration
-                                    const mockData = [];
-                                    const now = new Date();
-                                    for (let i = 11; i >= 0; i--) {
-                                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                                        const month = app.THAI_MONTHS_FULL[d.getMonth()];
-                                        const year = d.getFullYear() + 543;
-                                        mockData.push([
-                                            d.toISOString(), month, year.toString(), "โรงปรับปรุงคุณภาพน้ำหน้าทอน",
-                                            Math.random() * 5000 + 1000, // water
-                                            Math.random() * 20000 + 5000, // electricity
-                                            Math.random() * 1000, // phone
-                                            Math.random() * 1500 + 500, // internet
-                                            Math.random() * 8000 + 2000 // fuel
-                                        ]);
-                                    }
-                                    setTimeout(() => this.onSuccess(mockData), 1000);
-                                }
-                            }
-                        }
-                    }
-                };
-            }
             app.init();
         });
     </script>
