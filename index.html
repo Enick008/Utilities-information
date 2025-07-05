@@ -24,7 +24,7 @@
       text-align: center;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       border-bottom-left-radius: 8px;
-      border-bottom-right-radius: 8鸣;
+      border-bottom-right-radius: 8px;
     }
     .header-content {
       display: flex;
@@ -391,6 +391,17 @@
             <!-- Building options will be populated by JS -->
             </select>
         </div>
+        <div class="form-group">
+            <label for="filterExpenseType">เลือกประเภทค่าใช้จ่าย:</label>
+            <select id="filterExpenseType" name="filterExpenseType">
+                <option value="all">ทั้งหมด</option>
+                <option value="water">ค่าน้ำ</option>
+                <option value="electricity">ค่าไฟฟ้า</option>
+                <option value="phone">ค่าโทรศัพท์</option>
+                <option value="internet">ค่าอินเทอร์เน็ต</option>
+                <option value="fuel">ค่าน้ำมันเชื้อเพลิง</option>
+            </select>
+        </div>
       </div>
       <div class="button-group">
           <button type="button" id="refreshStatsButton">รีเฟรชข้อมูลสถิติ</button>
@@ -442,11 +453,12 @@
     const responseMessage = document.getElementById('responseMessage');
     const loadingMessage = document.getElementById('loadingMessage');
     const statisticsTableBody = document.querySelector('#statisticsTable tbody');
-    const filterStartMonthSelect = document.getElementById('filterStartMonth'); // New start month filter
-    const filterStartYearSelect = document.getElementById('filterStartYear');   // New start year filter
-    const filterEndMonthSelect = document.getElementById('filterEndMonth');     // New end month filter
-    const filterEndYearSelect = document.getElementById('filterEndYear');       // New end year filter
+    const filterStartMonthSelect = document.getElementById('filterStartMonth');
+    const filterStartYearSelect = document.getElementById('filterStartYear');
+    const filterEndMonthSelect = document.getElementById('filterEndMonth');
+    const filterEndYearSelect = document.getElementById('filterEndYear');
     const filterBuildingSelect = document.getElementById('filterBuilding');
+    const filterExpenseTypeSelect = document.getElementById('filterExpenseType'); // New expense type filter
     const summaryDataElement = document.getElementById('summaryData');
 
     let utilityBarChart;
@@ -458,7 +470,7 @@
         const today = new Date();
         document.getElementById('month').value = today.getMonth() + 1; // Month is 0-indexed
         document.getElementById('year').value = today.getFullYear();
-        populateDateRangeFilters(); // Populate new date range filters
+        populateDateRangeFilters();
         fetchStatistics(true); // Load all data on page load for both tabs
     });
 
@@ -593,13 +605,14 @@
       }
     });
 
-    // Handle refresh button click for statistics tab
+    // Event listeners for filters and refresh button
     refreshStatsButton.addEventListener('click', () => fetchStatistics(true));
     filterStartMonthSelect.addEventListener('change', applyFiltersAndRenderCharts);
     filterStartYearSelect.addEventListener('change', applyFiltersAndRenderCharts);
     filterEndMonthSelect.addEventListener('change', applyFiltersAndRenderCharts);
     filterEndYearSelect.addEventListener('change', applyFiltersAndRenderCharts);
     filterBuildingSelect.addEventListener('change', applyFiltersAndRenderCharts);
+    filterExpenseTypeSelect.addEventListener('change', applyFiltersAndRenderCharts); // New event listener
 
     // Main function to fetch statistics
     async function fetchStatistics(shouldRefreshAll = false) {
@@ -643,6 +656,7 @@
         const selectedEndMonth = parseInt(filterEndMonthSelect.value);
         const selectedEndYear = parseInt(filterEndYearSelect.value);
         const selectedBuilding = filterBuildingSelect.value;
+        const selectedExpenseType = filterExpenseTypeSelect.value; // Get selected expense type
 
         // Filter by building first
         if (selectedBuilding !== 'all') {
@@ -661,8 +675,8 @@
         });
 
         displaySummaryData(filteredData);
-        renderPieChart(filteredData);
-        renderBarChart(filteredData);
+        renderPieChart(filteredData); // Pie chart always shows all types for the filtered period/building
+        renderBarChart(filteredData, selectedExpenseType); // Bar chart respects expense type filter
         displayStatisticsTable(filteredData);
     }
 
@@ -736,7 +750,7 @@
     }
 
     // Function to render the Bar Chart with Total Expense Line
-    function renderBarChart(data) {
+    function renderBarChart(data, selectedExpenseType = 'all') {
         // Sort data by date for consistent chart display (oldest first)
         const sortedDataForChart = [...data].sort((a, b) => {
             const dateA = new Date(a.year, a.month - 1);
@@ -745,11 +759,57 @@
         });
 
         const labels = sortedDataForChart.map(row => `${getMonthName(row.month)} ${row.year} (${row.building})`);
-        const waterData = sortedDataForChart.map(row => parseFloat(row.water) || 0);
-        const electricityData = sortedDataForChart.map(row => parseFloat(row.electricity) || 0);
-        const phoneData = sortedDataForChart.map(row => parseFloat(row.phone) || 0);
-        const internetData = sortedDataForChart.map(row => parseFloat(row.internet) || 0);
-        const fuelData = sortedDataForChart.map(row => parseFloat(row.fuel) || 0);
+        
+        const datasets = [];
+
+        // Add datasets based on selectedExpenseType
+        if (selectedExpenseType === 'all' || selectedExpenseType === 'water') {
+            datasets.push({
+                label: 'ค่าน้ำ',
+                data: sortedDataForChart.map(row => parseFloat(row.water) || 0),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            });
+        }
+        if (selectedExpenseType === 'all' || selectedExpenseType === 'electricity') {
+            datasets.push({
+                label: 'ค่าไฟฟ้า',
+                data: sortedDataForChart.map(row => parseFloat(row.electricity) || 0),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            });
+        }
+        if (selectedExpenseType === 'all' || selectedExpenseType === 'phone') {
+            datasets.push({
+                label: 'ค่าโทรศัพท์',
+                data: sortedDataForChart.map(row => parseFloat(row.phone) || 0),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            });
+        }
+        if (selectedExpenseType === 'all' || selectedExpenseType === 'internet') {
+            datasets.push({
+                label: 'ค่าอินเทอร์เน็ต',
+                data: sortedDataForChart.map(row => parseFloat(row.internet) || 0),
+                backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+            });
+        }
+        if (selectedExpenseType === 'all' || selectedExpenseType === 'fuel') {
+            datasets.push({
+                label: 'ค่าน้ำมันเชื้อเพลิง',
+                data: sortedDataForChart.map(row => parseFloat(row.fuel) || 0),
+                backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            });
+        }
+
+        // Always add the total expenses line
         const totalExpensesData = sortedDataForChart.map(row => 
             (parseFloat(row.water) || 0) + 
             (parseFloat(row.electricity) || 0) + 
@@ -757,6 +817,20 @@
             (parseFloat(row.internet) || 0) + 
             (parseFloat(row.fuel) || 0)
         );
+        datasets.push({
+            type: 'line', // This dataset will be a line
+            label: 'ยอดรวมค่าใช้จ่าย',
+            data: totalExpensesData,
+            borderColor: '#36A2EB', // A distinct color for the line
+            backgroundColor: 'rgba(0,0,0,0)', // Transparent fill
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4, // Smooth line
+            pointRadius: 5,
+            pointBackgroundColor: '#36A2EB',
+            yAxisID: 'y' // Use the same Y-axis
+        });
+
 
         const ctx = document.getElementById('utilityBarChart').getContext('2d');
 
@@ -768,56 +842,7 @@
             type: 'bar', // Bar chart for comparison
             data: {
                 labels: labels,
-                datasets: [
-                    {
-                        label: 'ค่าน้ำ',
-                        data: waterData,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'ค่าไฟฟ้า',
-                        data: electricityData,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'ค่าโทรศัพท์',
-                        data: phoneData,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'ค่าอินเทอร์เน็ต',
-                        data: internetData,
-                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'ค่าน้ำมันเชื้อเพลิง',
-                        data: fuelData,
-                        backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                        borderColor: 'rgba(255, 159, 64, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        type: 'line', // This dataset will be a line
-                        label: 'ยอดรวมค่าใช้จ่าย',
-                        data: totalExpensesData,
-                        borderColor: '#36A2EB', // A distinct color for the line
-                        backgroundColor: 'rgba(0,0,0,0)', // Transparent fill
-                        borderWidth: 3,
-                        fill: false,
-                        tension: 0.4, // Smooth line
-                        pointRadius: 5,
-                        pointBackgroundColor: '#36A2EB',
-                        yAxisID: 'y' // Use the same Y-axis
-                    }
-                ]
+                datasets: datasets
             },
             options: {
                 responsive: true,
