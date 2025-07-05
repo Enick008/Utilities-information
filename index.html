@@ -1,268 +1,505 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
     <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบรายงานสาธารณูปโภค</title>
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for statistics visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* CSS ไม่มีการเปลี่ยนแปลงจากเดิม */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f0f7; color: #333; }
-        header { background-color: #dc3545; color: white; padding: 15px 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-        header img { height: 100px; width: auto; margin-bottom: 10px; }
-        header h1 { margin: 0; font-size: 1.5em; }
-        .tab-container { display: flex; justify-content: center; background-color: #c82333; }
-        .tab-link { padding: 15px 25px; cursor: pointer; color: white; font-weight: bold; border-bottom: 3px solid transparent; transition: background-color 0.3s, border-bottom 0.3s; }
-        .tab-link:hover { background-color: #b21f2d; }
-        .tab-link.active { border-bottom: 3px solid #ffc107; }
-        main { padding: 20px; }
-        .tab-content { display: none; animation: fadeIn 0.5s; }
-        .tab-content.active { display: block; }
-        .form-container { max-width: 600px; margin: 20px auto; padding: 25px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; }
-        .form-group input[type="number"], .form-group textarea, .form-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1em; }
-        .form-group textarea { resize: vertical; min-height: 80px; }
-        .submit-btn { width: 100%; padding: 15px; background-color: #dc3545; color: white; border: none; border-radius: 5px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
-        .submit-btn:disabled { background-color: #aaa; cursor: not-allowed; }
-        .submit-btn:hover:not(:disabled) { background-color: #c82333; }
-        #status { text-align: center; margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 5px; }
-        #status.success { background-color: #d4edda; color: #155724; }
-        #status.error { background-color: #f8d7da; color: #721c24; }
-        #status.loading { background-color: #e2e3e5; color: #383d41; }
-        .filter-container { max-width: 600px; margin: 0 auto 20px auto; padding: 15px; background-color: #fff; border-radius: 8px; text-align: center; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-        .filter-group { display: flex; align-items: center; gap: 10px; }
-        .filter-group label { margin: 0; font-weight: bold; }
-        .filter-group select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-        footer { text-align: center; padding: 20px; margin-top: 30px; color: #777; font-size: 0.9em; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Apply custom font to the body */
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        /* Custom animation for fade-in effect */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        /* Custom style for active tab */
+        .tab-link.active {
+            border-color: #facc15; /* yellow-400 */
+            background-color: #b91c1c; /* red-700 */
+        }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800">
 
-    <header>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b1/Seal_of_Ko_Samui.png" alt="Logo">
-        <h1>ระบบรายงานสาธารณูปโภค</h1>
-        <div class="tab-container">
-            <div class="tab-link active" onclick="openTab(event, 'report')">รายงานผลประจำเดือน</div>
-            <div class="tab-link" onclick="openTab(event, 'stats')">สถิติ</div>
+    <!-- Header Section -->
+    <header class="bg-red-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex flex-col items-center text-center">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b1/Seal_of_Ko_Samui.png" alt="ตราสัญลักษณ์เทศบาลนครเกาะสมุย" class="h-24 w-24 mb-2 object-contain">
+            <h1 class="text-2xl md:text-3xl font-bold">ระบบรายงานสาธารณูปโภค</h1>
         </div>
+        <!-- Tab Navigation -->
+        <nav class="bg-red-800">
+            <div class="container mx-auto flex justify-center">
+                <button class="tab-link active text-white font-semibold py-3 px-6 border-b-4 border-transparent transition duration-300 ease-in-out" onclick="app.openTab(event, 'report')">
+                    รายงานผลประจำเดือน
+                </button>
+                <button class="tab-link text-white font-semibold py-3 px-6 border-b-4 border-transparent transition duration-300 ease-in-out" onclick="app.openTab(event, 'stats')">
+                    สถิติ
+                </button>
+            </div>
+        </nav>
     </header>
 
-    <main>
-        <div id="report" class="tab-content active">
-            <form id="utilityForm" class="form-container">
-                <div class="form-group">
-                    <label for="building">📍 อาคาร</label>
-                    <select id="building" name="building" required>
-                        <option value="" disabled selected>-- กรุณาเลือกอาคาร --</option>
-                        <option value="โรงปรับปรุงคุณภาพน้ำหน้าทอน">โรงปรับปรุงคุณภาพน้ำหน้าทอน</option>
-                        <option value="โรงปรับปรุงคุณภาพน้ำละไม">โรงปรับปรุงคุณภาพน้ำละไม</option>
-                        <option value="โรงปรับปรุงคุณภาพน้ำเฉวง">โรงปรับปรุงคุณภาพน้ำเฉวง</option>
-                        <option value="โรงสูบน้ำแยกสาม">โรงสูบน้ำแยกสาม</option> <option value="ระบบบำบัดน้ำเสียแม่น้ำ">ระบบบำบัดน้ำเสียแม่น้ำ</option>
-                        <option value="ระบบบำบัดน้ำเสียหลังสภ.บ่อผุด">ระบบบำบัดน้ำเสียหลังสภ.บ่อผุด</option>
-                        <option value="ระบบบำบัดน้ำเสียเขาหัวจุก">ระบบบำบัดน้ำเสียเขาหัวจุก</option>
-                        <option value="ระบบบำบัดน้ำเสียร้านทองสุข">ระบบบำบัดน้ำเสียร้านทองสุข</option>
-                        <option value="ระบบบำบัดน้ำเสียหลังวัดสว่าง">ระบบบำบัดน้ำเสียหลังวัดสว่าง</option>
-                        <option value="ระบบบำบัดน้ำเสียเหนือคลอง">ระบบบำบัดน้ำเสียเหนือคลอง</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="water">💧 ค่าน้ำ (บาท)</label>
-                    <input type="number" id="water" name="water" required>
-                </div>
-                <div class="form-group">
-                    <label for="electricity">⚡️ ค่าไฟฟ้า (บาท)</label>
-                    <input type="number" id="electricity" name="electricity" required>
-                </div>
-                <div class="form-group">
-                    <label for="phone">📞 ค่าโทรศัพท์ (บาท)</label>
-                    <input type="number" id="phone" name="phone" required>
-                </div>
-                <div class="form-group">
-                    <label for="internet">🌐 ค่าอินเตอร์เน็ต (บาท)</label>
-                    <input type="number" id="internet" name="internet" required>
-                </div>
-                <div class="form-group">
-                    <label for="fuel">⛽️ ค่าน้ำมันเชื้อเพลิง (บาท)</label>
-                    <input type="number" id="fuel" name="fuel" required>
-                </div>
-                <div class="form-group">
-                    <label for="notes">📝 หมายเหตุ (ไม่บังคับ)</label>
-                    <textarea id="notes" name="notes"></textarea>
-                </div>
-                <button type="submit" class="submit-btn" id="submitBtn">บันทึกข้อมูล</button>
-                <div id="status"></div>
-            </form>
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 md:p-6">
+        <!-- Report Submission Tab -->
+        <div id="report" class="tab-content active fade-in">
+            <div class="max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
+                <form id="utilityForm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                        <!-- Month Selector -->
+                        <div class="form-group">
+                            <label for="reportMonth" class="block text-sm font-medium text-gray-700 mb-1">เดือน</label>
+                            <select id="reportMonth" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500"></select>
+                        </div>
+                        <!-- Year Selector -->
+                        <div class="form-group">
+                            <label for="reportYear" class="block text-sm font-medium text-gray-700 mb-1">ปี (พ.ศ.)</label>
+                            <select id="reportYear" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500"></select>
+                        </div>
+                    </div>
+                    <!-- Building Selector -->
+                    <div class="form-group mb-6">
+                        <label for="building" class="block text-sm font-medium text-gray-700 mb-1">อาคาร</label>
+                        <select id="building" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500">
+                            <option value="" disabled selected>-- เลือกอาคาร --</option>
+                            <option value="โรงปรับปรุงคุณภาพน้ำหน้าทอน">โรงปรับปรุงคุณภาพน้ำหน้าทอน</option>
+                            <option value="โรงปรับปรุงคุณภาพน้ำละไม">โรงปรับปรุงคุณภาพน้ำละไม</option>
+                            <option value="โรงปรับปรุงคุณภาพน้ำเฉวง">โรงปรับปรุงคุณภาพน้ำเฉวง</option>
+                            <option value="ระบบบำบัดน้ำเสียแม่น้ำ">ระบบบำบัดน้ำเสียแม่น้ำ</option>
+                            <option value="ระบบบำบัดน้ำเสียหลังสภ.บ่อผุด">ระบบบำบัดน้ำเสียหลังสภ.บ่อผุด</option>
+                            <option value="ระบบบำบัดน้ำเสียเขาหัวจุก">ระบบบำบัดน้ำเสียเขาหัวจุก</option>
+                            <option value="ระบบบำบัดน้ำเสียร้านทองสุข">ระบบบำบัดน้ำเสียร้านทองสุข</option>
+                            <option value="ระบบบำบัดน้ำเสียหลังวัดสว่าง">ระบบบำบัดน้ำเสียหลังวัดสว่าง</option>
+                            <option value="ระบบบำบัดน้ำเสียเหนือคลอง">ระบบบำบัดน้ำเสียเหนือคลอง</option>
+                            <option value="โรงสูบน้ำแยกสาม">โรงสูบน้ำแยกสาม</option>
+                        </select>
+                    </div>
+                    <!-- Utility Costs Inputs -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-4">
+                        <div class="form-group">
+                            <label for="water" class="block text-sm font-medium text-gray-700 mb-1">ค่าน้ำ (บาท)</label>
+                            <input type="number" id="water" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="electricity" class="block text-sm font-medium text-gray-700 mb-1">ค่าไฟฟ้า (บาท)</label>
+                            <input type="number" id="electricity" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">ค่าโทรศัพท์ (บาท)</label>
+                            <input type="number" id="phone" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="internet" class="block text-sm font-medium text-gray-700 mb-1">ค่าอินเตอร์เน็ต (บาท)</label>
+                            <input type="number" id="internet" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="fuel" class="block text-sm font-medium text-gray-700 mb-1">ค่าน้ำมันเชื้อเพลิง (บาท)</label>
+                            <input type="number" id="fuel" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="recorderName" class="block text-sm font-medium text-gray-700 mb-1">ผู้บันทึกข้อมูล</label>
+                            <input type="text" id="recorderName" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="ชื่อ-สกุล">
+                        </div>
+                    </div>
+                     <!-- Notes Textarea -->
+                    <div class="form-group mb-6">
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                        <textarea id="notes" rows="3" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+                    </div>
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        บันทึกข้อมูล
+                    </button>
+                    <!-- Status Message Area -->
+                    <div id="status" class="mt-4 text-center font-medium h-6"></div>
+                </form>
+            </div>
         </div>
 
-        <div id="stats" class="tab-content">
-             <div class="filter-container">
-                <div class="filter-group">
-                    <label for="monthFilter">เลือกเดือน:</label>
-                    <select id="monthFilter">
-                        <option value="all">ทั้งหมด</option>
-                    </select>
+        <!-- Statistics Tab -->
+        <div id="stats" class="tab-content hidden fade-in">
+            <div class="max-w-6xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
+                <!-- Date Range Filter -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 items-end mb-6 bg-gray-50 p-4 rounded-lg">
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เดือนเริ่มต้น</label>
+                        <select id="startMonth" class="w-full p-2 border border-gray-300 rounded-md"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ปีเริ่มต้น</label>
+                        <select id="startYear" class="w-full p-2 border border-gray-300 rounded-md"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">เดือนสิ้นสุด</label>
+                        <select id="endMonth" class="w-full p-2 border border-gray-300 rounded-md"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ปีสิ้นสุด</label>
+                        <select id="endYear" class="w-full p-2 border border-gray-300 rounded-md"></select>
+                    </div>
+                    <div class="col-span-2 md:col-span-1">
+                        <button onclick="app.filterAndRenderChart()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">
+                            ดูสถิติ
+                        </button>
+                    </div>
                 </div>
-                <div class="filter-group">
-                    <label for="buildingFilter">เลือกอาคาร:</label>
-                    <select id="buildingFilter">
-                        <option value="all">ทั้งหมด</option>
-                    </select>
+                <!-- Chart Container -->
+                <div id="chart-container" class="relative min-h-[400px]">
+                    <canvas id="utilityChart"></canvas>
+                    <div id="chart-message" class="absolute inset-0 flex items-center justify-center text-gray-500 text-lg font-semibold hidden"></div>
                 </div>
-             </div>
-             <div class="form-container">
-                <canvas id="utilityChart"></canvas>
-             </div>
+            </div>
         </div>
     </main>
 
-    <footer>
-        ©2025 ระบบรายงานสาธารณูปโภคกองช่างสุขาภิบาล โดยนายธีรศักดิ์ พูลเขาล้าน
+    <!-- Footer Section -->
+    <footer class="text-center py-6 text-gray-500 text-sm">
+        <p>©2025 ระบบรายงานสาธารณูปโภคกองช่างสุขาภิบาล</p>
+        <p>โดยนายธีรศักดิ์ พูลเขาล้าน</p>
     </footer>
 
     <script>
-        let utilityChart;
-        let allData = [];
-        const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        // Encapsulate the application logic in an 'app' object
+        const app = {
+            utilityChart: null,
+            allData: [],
+            THAI_MONTHS_FULL: [
+                "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+            ],
 
-        function openTab(evt, tabName) {
-            const tabContents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < tabContents.length; i++) tabContents[i].style.display = "none";
-            const tabLinks = document.getElementsByClassName("tab-link");
-            for (let i = 0; i < tabLinks.length; i++) tabLinks[i].className = tabLinks[i].className.replace(" active", "");
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-            if (tabName === 'stats' && allData.length === 0) {
-                loadChartData();
-            }
-        }
-        
-        document.getElementById("utilityForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById("submitBtn");
-            const statusDiv = document.getElementById("status");
-            statusDiv.textContent = "⏳ กำลังบันทึกข้อมูล... กรุณารอสักครู่";
-            statusDiv.className = 'loading';
-            submitBtn.disabled = true;
+            // Initializes the application
+            init() {
+                this.populateDateSelectors();
+                this.setupEventListeners();
+                this.loadChartData(); // Load initial data for the chart tab
+            },
 
-            const formData = {
-                building: document.getElementById("building").value,
-                water: document.getElementById("water").value,
-                electricity: document.getElementById("electricity").value,
-                phone: document.getElementById("phone").value,
-                internet: document.getElementById("internet").value,
-                fuel: document.getElementById("fuel").value,
-                notes: document.getElementById("notes").value,
-            };
+            // Sets up all event listeners
+            setupEventListeners() {
+                document.getElementById("utilityForm").addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    this.submitForm();
+                });
+            },
 
-            google.script.run
-                .withSuccessHandler(response => {
-                    statusDiv.textContent = "✅ " + response;
-                    statusDiv.className = 'success';
-                    submitBtn.disabled = false;
-                    document.getElementById("utilityForm").reset();
-                    loadChartData();
-                })
-                .withFailureHandler(error => {
-                    statusDiv.textContent = "❌ " + error.message;
-                    statusDiv.className = 'error';
-                    submitBtn.disabled = false;
-                })
-                .saveData(formData);
-        });
+            // Populates all month and year dropdowns
+            populateDateSelectors() {
+                const monthSelectIds = ["reportMonth", "startMonth", "endMonth"];
+                const yearSelectIds = ["reportYear", "startYear", "endYear"];
+                const currentBuddhistYear = new Date().getFullYear() + 543;
+                const years = Array.from({ length: 10 }, (_, i) => currentBuddhistYear - 5 + i); // Range of 10 years
 
-        function loadChartData() {
-            google.script.run.withSuccessHandler(data => {
-                allData = data;
-                populateFilters(data);
-                filterAndRenderChart();
-            }).getSheetData();
-        }
+                monthSelectIds.forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = "";
+                    this.THAI_MONTHS_FULL.forEach(month => select.add(new Option(month, month)));
+                });
 
-        function populateFilters(data) {
-            const monthFilter = document.getElementById('monthFilter');
-            const buildingFilter = document.getElementById('buildingFilter');
-            const months = new Set();
-            const buildings = new Set();
+                yearSelectIds.forEach(id => {
+                    const select = document.getElementById(id);
+                    select.innerHTML = "";
+                    years.forEach(year => select.add(new Option(year, year)));
+                });
+                
+                // Set default values for the report form
+                const now = new Date();
+                document.getElementById("reportMonth").value = this.THAI_MONTHS_FULL[now.getMonth()];
+                document.getElementById("reportYear").value = currentBuddhistYear;
+            },
 
-            data.forEach(row => {
-                const date = new Date(row[0]);
-                const monthYear = `${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
-                months.add(monthYear);
-                buildings.add(row[1]);
-            });
+            // Handles tab switching
+            openTab(evt, tabName) {
+                document.querySelectorAll(".tab-content").forEach(tc => tc.classList.add("hidden"));
+                document.querySelectorAll(".tab-link").forEach(tl => tl.classList.remove("active"));
+                
+                document.getElementById(tabName).classList.remove("hidden");
+                evt.currentTarget.classList.add("active");
+
+                if (tabName === "stats" && this.allData.length > 0) {
+                    this.filterAndRenderChart();
+                }
+            },
+
+            // Handles form submission
+            submitForm() {
+                const data = {
+                    reportMonth: document.getElementById("reportMonth").value,
+                    reportYear: document.getElementById("reportYear").value,
+                    building: document.getElementById("building").value,
+                    water: document.getElementById("water").value,
+                    electricity: document.getElementById("electricity").value,
+                    phone: document.getElementById("phone").value,
+                    internet: document.getElementById("internet").value,
+                    fuel: document.getElementById("fuel").value,
+                    notes: document.getElementById("notes").value,
+                    recorderName: document.getElementById("recorderName").value,
+                };
+
+                if (!data.building) {
+                    this.showStatus("กรุณาเลือกอาคาร", "error");
+                    return;
+                }
+
+                this.showStatus("⏳ กำลังบันทึกข้อมูล...", "loading");
+                
+                // This part interacts with Google Apps Script backend
+                google.script.run
+                    .withSuccessHandler(msg => {
+                        this.showStatus(`✅ ${msg}`, "success");
+                        document.getElementById("utilityForm").reset();
+                        this.populateDateSelectors(); // Reset date selectors to default
+                        this.loadChartData(); // Refresh chart data after submission
+                    })
+                    .withFailureHandler(err => {
+                        this.showStatus(`❌ เกิดข้อผิดพลาด: ${err.message}`, "error");
+                    })
+                    .saveData(data);
+            },
+
+            // Displays status messages
+            showStatus(message, type) {
+                const statusDiv = document.getElementById("status");
+                statusDiv.textContent = message;
+                statusDiv.className = "mt-4 text-center font-medium h-6"; // Reset classes
+                if (type === 'success') statusDiv.classList.add('text-green-600');
+                if (type === 'error') statusDiv.classList.add('text-red-600');
+                if (type === 'loading') statusDiv.classList.add('text-blue-600');
+                
+                if(type === 'success' || type === 'error') {
+                    setTimeout(() => statusDiv.textContent = '', 5000);
+                }
+            },
+
+            // Shows a message on the chart area (e.g., for loading or errors)
+            showChartMessage(message) {
+                const msgDiv = document.getElementById("chart-message");
+                const chartCanvas = document.getElementById("utilityChart");
+                msgDiv.textContent = message;
+                msgDiv.classList.remove('hidden');
+                chartCanvas.classList.add('hidden');
+            },
+
+            hideChartMessage() {
+                 const msgDiv = document.getElementById("chart-message");
+                 const chartCanvas = document.getElementById("utilityChart");
+                 msgDiv.classList.add('hidden');
+                 chartCanvas.classList.remove('hidden');
+            },
+
+            // Loads data for the chart from Google Apps Script
+            loadChartData() {
+                this.showChartMessage("กำลังโหลดข้อมูลสถิติ...");
+                google.script.run
+                    .withSuccessHandler(data => {
+                        this.allData = data;
+                        this.setDefaultDateRange();
+                        this.filterAndRenderChart();
+                    })
+                    .withFailureHandler(err => {
+                        this.showChartMessage(`ไม่สามารถโหลดข้อมูลได้: ${err.message}`);
+                    })
+                    .getSheetData();
+            },
             
-            while (monthFilter.options.length > 1) monthFilter.remove(1);
-            months.forEach(month => {
-                const option = new Option(month, month);
-                monthFilter.add(option);
-            });
+            // Sets the default date range for the chart to the last 12 months
+            setDefaultDateRange() {
+                const now = new Date();
+                const endDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                const startDate = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
 
-            while (buildingFilter.options.length > 1) buildingFilter.remove(1);
-            buildings.forEach(building => {
-                const option = new Option(building, building);
-                buildingFilter.add(option);
-            });
-        }
-        
-        document.getElementById('monthFilter').addEventListener('change', filterAndRenderChart);
-        document.getElementById('buildingFilter').addEventListener('change', filterAndRenderChart);
+                document.getElementById("endMonth").value = this.THAI_MONTHS_FULL[endDate.getMonth()];
+                document.getElementById("endYear").value = endDate.getFullYear() + 543;
+                document.getElementById("startMonth").value = this.THAI_MONTHS_FULL[startDate.getMonth()];
+                document.getElementById("startYear").value = startDate.getFullYear() + 543;
+            },
 
-        function filterAndRenderChart() {
-            const selectedMonth = document.getElementById('monthFilter').value;
-            const selectedBuilding = document.getElementById('buildingFilter').value;
-            
-            let filteredData = allData;
+            // Filters data based on selected date range and triggers chart rendering
+            filterAndRenderChart() {
+                if (this.allData.length === 0) {
+                    this.showChartMessage("ยังไม่มีข้อมูลในระบบ");
+                    return;
+                }
 
-            if (selectedBuilding !== 'all') {
-                filteredData = filteredData.filter(row => row[1] === selectedBuilding);
-            }
+                const startMonth = document.getElementById("startMonth").value;
+                const startYear = parseInt(document.getElementById("startYear").value, 10);
+                const endMonth = document.getElementById("endMonth").value;
+                const endYear = parseInt(document.getElementById("endYear").value, 10);
 
-            if (selectedMonth !== 'all') {
-                filteredData = filteredData.filter(row => {
-                    const date = new Date(row[0]);
-                    const monthYear = `${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
-                    return monthYear === selectedMonth;
+                const fromDate = new Date(startYear - 543, this.THAI_MONTHS_FULL.indexOf(startMonth));
+                // Set to the end of the month to include all days in that month
+                const toDate = new Date(endYear - 543, this.THAI_MONTHS_FULL.indexOf(endMonth) + 1, 0);
+
+                const filteredData = this.allData.filter(row => {
+                    // Assuming row format: [Timestamp, Month, Year, Building, Water, Elec, ...]
+                    const recordMonthIndex = this.THAI_MONTHS_FULL.indexOf(row[1]);
+                    const recordYear = parseInt(row[2], 10) - 543;
+                    if (recordMonthIndex === -1 || isNaN(recordYear)) return false;
+                    
+                    const recordDate = new Date(recordYear, recordMonthIndex);
+                    return recordDate >= fromDate && recordDate <= toDate;
+                });
+
+                this.renderChart(filteredData);
+            },
+
+            // Renders the chart with the provided data
+            renderChart(data) {
+                if (!data || data.length === 0) {
+                    this.showChartMessage("ไม่พบข้อมูลตามช่วงเวลาที่เลือก");
+                    if (this.utilityChart) this.utilityChart.destroy();
+                    return;
+                }
+                
+                this.hideChartMessage();
+
+                // Group data by month/year
+                const grouped = data.reduce((acc, row) => {
+                    const key = `${row[1]} ${row[2]}`; // e.g., "มกราคม 2567"
+                    if (!acc[key]) {
+                        acc[key] = { water: 0, electricity: 0, phone: 0, internet: 0, fuel: 0, date: new Date(parseInt(row[2])-543, this.THAI_MONTHS_FULL.indexOf(row[1])) };
+                    }
+                    acc[key].water += Number(row[4] || 0);
+                    acc[key].electricity += Number(row[5] || 0);
+                    acc[key].phone += Number(row[6] || 0);
+                    acc[key].internet += Number(row[7] || 0);
+                    acc[key].fuel += Number(row[8] || 0);
+                    return acc;
+                }, {});
+
+                // Sort the grouped data by date chronologically
+                const sortedLabels = Object.keys(grouped).sort((a, b) => grouped[a].date - grouped[b].date);
+
+                const datasets = [
+                    { label: "ค่าน้ำ", data: sortedLabels.map(l => grouped[l].water), backgroundColor: 'rgba(54, 162, 235, 0.5)', borderColor: 'rgb(54, 162, 235)' },
+                    { label: "ค่าไฟฟ้า", data: sortedLabels.map(l => grouped[l].electricity), backgroundColor: 'rgba(255, 206, 86, 0.5)', borderColor: 'rgb(255, 206, 86)' },
+                    { label: "ค่าโทรศัพท์", data: sortedLabels.map(l => grouped[l].phone), backgroundColor: 'rgba(75, 192, 192, 0.5)', borderColor: 'rgb(75, 192, 192)' },
+                    { label: "ค่าอินเตอร์เน็ต", data: sortedLabels.map(l => grouped[l].internet), backgroundColor: 'rgba(153, 102, 255, 0.5)', borderColor: 'rgb(153, 102, 255)' },
+                    { label: "ค่าน้ำมัน", data: sortedLabels.map(l => grouped[l].fuel), backgroundColor: 'rgba(255, 99, 132, 0.5)', borderColor: 'rgb(255, 99, 132)' }
+                ];
+                
+                datasets.forEach(ds => {
+                    ds.borderWidth = 2;
+                    ds.hoverBorderWidth = 3;
+                });
+
+                if (this.utilityChart) {
+                    this.utilityChart.destroy();
+                }
+
+                const ctx = document.getElementById("utilityChart").getContext("2d");
+                this.utilityChart = new Chart(ctx, {
+                    type: "bar",
+                    data: { labels: sortedLabels, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: "สรุปค่าใช้จ่ายสาธารณูปโภครายเดือน", font: { size: 18, family: "'Sarabun', sans-serif" } },
+                            legend: { position: 'top', labels: { font: { family: "'Sarabun', sans-serif" } } },
+                             tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: "ค่าใช้จ่าย (บาท)", font: { size: 14, family: "'Sarabun', sans-serif" } },
+                                ticks: {
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('th-TH').format(value);
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: { font: { family: "'Sarabun', sans-serif" } }
+                            }
+                        }
+                    }
                 });
             }
-            renderChart(filteredData);
-        }
+        };
 
-        function renderChart(data) {
-            const ctx = document.getElementById('utilityChart').getContext('2d');
-            const labels = data.map(row => new Date(row[0]).toLocaleDateString('th-TH'));
-            const datasets = [{
-                label: 'ค่าน้ำ', data: data.map(row => row[2]), borderColor: 'rgba(54, 162, 235, 1)', backgroundColor: 'rgba(54, 162, 235, 0.2)', borderWidth: 2, fill: true,
-            }, {
-                label: 'ค่าไฟฟ้า', data: data.map(row => row[3]), borderColor: 'rgba(255, 206, 86, 1)', backgroundColor: 'rgba(255, 206, 86, 0.2)', borderWidth: 2, fill: true,
-            }, {
-                label: 'ค่าโทรศัพท์', data: data.map(row => row[4]), borderColor: 'rgba(75, 192, 192, 1)', backgroundColor: 'rgba(75, 192, 192, 0.2)', borderWidth: 2, fill: true,
-            }, {
-                label: 'ค่าอินเตอร์เน็ต', data: data.map(row => row[5]), borderColor: 'rgba(153, 102, 255, 1)', backgroundColor: 'rgba(153, 102, 255, 0.2)', borderWidth: 2, fill: true,
-            }, {
-                label: 'ค่าน้ำมัน', data: data.map(row => row[6]), borderColor: 'rgba(255, 99, 132, 1)', backgroundColor: 'rgba(255, 99, 132, 0.2)', borderWidth: 2, fill: true,
-            }];
-
-            if (utilityChart) utilityChart.destroy();
-
-            utilityChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: labels, datasets: datasets },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: { display: true, text: 'สรุปค่าใช้จ่ายสาธารณูปโภค' },
-                        tooltip: { mode: 'index', intersect: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'ค่าใช้จ่าย (บาท)' } },
-                        x: { title: { display: true, text: 'วันที่บันทึก' } }
+        // Run the application once the DOM is fully loaded
+        document.addEventListener("DOMContentLoaded", () => {
+            // Mocking google.script.run for local testing without a Google Apps Script backend.
+            // You can comment out or remove this block when deploying.
+            if (typeof google === 'undefined') {
+                window.google = {
+                    script: {
+                        run: {
+                            withSuccessHandler: function(callback) {
+                                this.onSuccess = callback;
+                                return this;
+                            },
+                            withFailureHandler: function(callback) {
+                                this.onFailure = callback;
+                                return this;
+                            },
+                            saveData: function(data) {
+                                console.log("Mock Save:", data);
+                                if (this.onSuccess) {
+                                    setTimeout(() => this.onSuccess("บันทึกข้อมูล (จำลอง) สำเร็จ"), 1000);
+                                }
+                            },
+                            getSheetData: function() {
+                                console.log("Mock Load Data");
+                                if (this.onSuccess) {
+                                    // Generating some mock data for demonstration
+                                    const mockData = [];
+                                    const now = new Date();
+                                    for (let i = 11; i >= 0; i--) {
+                                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                                        const month = app.THAI_MONTHS_FULL[d.getMonth()];
+                                        const year = d.getFullYear() + 543;
+                                        mockData.push([
+                                            d.toISOString(), month, year.toString(), "โรงปรับปรุงคุณภาพน้ำหน้าทอน",
+                                            Math.random() * 5000 + 1000, // water
+                                            Math.random() * 20000 + 5000, // electricity
+                                            Math.random() * 1000, // phone
+                                            Math.random() * 1500 + 500, // internet
+                                            Math.random() * 8000 + 2000 // fuel
+                                        ]);
+                                    }
+                                    setTimeout(() => this.onSuccess(mockData), 1000);
+                                }
+                            }
+                        }
                     }
-                }
-            });
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => document.querySelector('.tab-link').click());
+                };
+            }
+            app.init();
+        });
     </script>
 </body>
 </html>
