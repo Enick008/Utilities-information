@@ -1,61 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!-- 🔒 โค้ดตรวจสอบ Token ป้องกันการเข้าถึงเว็บย่อยโดยตรง -->
-  <script>
-  (async function() {
-      const MAIN_DASHBOARD_URL = "https://smartdivistionofsanitarywork.netlify.app/";
-      const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbx0Im1889sXDyBBNblh3KiaXE8mgJaNcGSMTU-wCtZ_fPIHsJpNCJOK4eiaKSxuKDVS/exec";
-
-      // ซ่อนหน้าเว็บไว้ชั่วคราวระหว่างตรวจสอบสิทธิ์
-      document.documentElement.style.visibility = 'hidden';
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-
-      // หากเคยยืนยันตัวตนผ่านแล้วในแท็บนี้ (กดรีเฟรชหน้าเว็บย่อยจะไม่เด้งหลุด)
-      if (sessionStorage.getItem('subpage_verified') === 'true') {
-          document.documentElement.style.visibility = 'visible';
-          return;
-      }
-
-      if (!token) {
-          blockAccess("ไม่อนุญาตให้เข้าถึงหน้านี้โดยตรง กรุณาเข้าใช้งานผ่านหน้าแดชบอร์ดหลักเท่านั้น");
-          return;
-      }
-
-      try {
-          // ส่ง Token ไปตรวจสอบกับหลังบ้าน Google Apps Script
-          const res = await fetch(`${AUTH_API_URL}?action=verifyToken&token=${encodeURIComponent(token)}`);
-          const data = await res.json();
-
-          if (data.valid) {
-              // บันทึกสถานะว่าผ่านแล้ว และลบ ?token=... ออกจาก URL เพื่อความสวยงาม
-              sessionStorage.setItem('subpage_verified', 'true');
-              window.history.replaceState({}, document.title, window.location.pathname);
-              document.documentElement.style.visibility = 'visible';
-          } else {
-              blockAccess(data.message || "รหัสยืนยันหมดอายุแล้ว กรุณากลับไปคลิกจากหน้าแดชบอร์ดหลักอีกครั้ง");
-          }
-      } catch (e) {
-          blockAccess("ไม่สามารถตรวจสอบสิทธิ์การเข้าใช้งานได้");
-      }
-
-      function blockAccess(msg) {
-          document.documentElement.innerHTML = `
-              <body style="font-family: sans-serif; background: #1e3a8a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; padding: 20px;">
-                  <div style="background: white; color: #1f2937; padding: 40px; border-radius: 24px; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
-                      <div style="font-size: 60px; margin-bottom: 16px;">🚫</div>
-                      <h2 style="margin: 0 0 12px 0; color: #1e3a8a;">ปฏิเสธการเข้าถึง</h2>
-                      <p style="color: #4b5563; line-height: 1.6; margin-bottom: 24px;">${msg}</p>
-                      <a href="${MAIN_DASHBOARD_URL}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 9999px; font-weight: bold; display: inline-block;">กลับไปหน้าแดชบอร์ดหลัก</a>
-                  </div>
-              </body>
-          `;
-          document.documentElement.style.visibility = 'visible';
-      }
-  })();
-  </script>
   <base target="_top">
   <title>ระบบบันทึกค่าใช้จ่ายสาธารณูปโภค</title>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
